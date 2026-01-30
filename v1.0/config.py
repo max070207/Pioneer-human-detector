@@ -10,7 +10,8 @@ MEDIAPIPE_CONFIG = {
 
 FACE_RECOGNITION_CONFIG = {
     'tolerance': 0.5,
-    'cooldown_time': 5
+    'cooldown_time': 5,
+    'model': 'hog' # 'hog' (faster, CPU) or 'cnn' (slower, GPU/CUDA required)
 }
 
 ASYNC_CONFIG = {
@@ -21,7 +22,7 @@ ASYNC_CONFIG = {
 }
 
 DESKTOP_PATH = os.path.join(os.path.expanduser("~"), "Desktop")
-PHOTOS_FOLDER = "C:\\Users\\ACIIID\\Desktop\\project\\database\\recognized_humans"
-FACES_FOLDER = "C:\\Users\\ACIIID\\Desktop\\project\\database\\recognized_faces"
-DATABASE_PATH = "C:\\Users\\ACIIID\\Desktop\\project\\database\\faces_database"
-LOGS_FOLDER = "C:\\Users\\ACIIID\\Desktop\\project\\database\\logs"
+PHOTOS_FOLDER = os.path.join(DESKTOP_PATH, "recognized_humans")
+FACES_FOLDER = os.path.join(DESKTOP_PATH, "recognized_faces")
+DATABASE_PATH = os.path.join(DESKTOP_PATH, "faces_database")
+LOGS_FOLDER = os.path.join(DESKTOP_PATH, "logs")

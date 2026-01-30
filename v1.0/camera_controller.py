@@ -1,5 +1,6 @@
 # camera_controller.py
 from imports import *
+from video_getter import VideoGetter
 
 class CameraController:
     def __init__(self, file_manager, log_maker) -> None:
@@ -46,16 +47,18 @@ class CameraController:
         """Инициализация встроенной камеры ПК"""
         try:
             for camera_index in [0, 1, 2]:
-                cap = cv2.VideoCapture(camera_index)
-                if cap.isOpened():
-                    ret, frame = cap.read()
+                video_getter = VideoGetter(camera_index)
+                if video_getter.isOpened():
+                    video_getter.start()
+                    time.sleep(0.5)
+                    ret, frame = video_getter.read()
                     if ret and frame is not None:
-                        self.log_maker.writelog(self.logfile_name, f'Drone camera connected ({camera_index}).')
-                        return cap
+                        self.log_maker.writelog(self.logfile_name, f'PC camera connected ({camera_index}).')
+                        return video_getter
                     else:
-                        cap.release()
+                        video_getter.stop()
                 else:
-                    cap.release()
+                    video_getter.stop()
             self.log_maker.writelog(self.logfile_name, 'PC camera not found.')
             return None
         except Exception as e:
@@ -121,13 +124,18 @@ class CameraController:
 
     def cleanup(self) -> None:
         """Очистка ресурсов всех камер"""
-        if hasattr(self, 'pioneer'):
+        if hasattr(self, 'pioneer_cam'):
             try:
-                self.pioneer.disarm()
+                self.pioneer_cam.disconnect()
                 self.log_maker.writelog(self.logfile_name, 'Drone disconnected.')
             except Exception as e:
                 self.log_maker.writelog(self.logfile_name, f'Drone disconnection error:\n{e}')
+        
         if self.laptop_camera is not None:
-            self.laptop_camera.release()
+            if isinstance(self.laptop_camera, VideoGetter):
+                self.laptop_camera.stop()
+            else:
+                self.laptop_camera.release()
             self.log_maker.writelog(self.logfile_name, 'PC camera disconnected.')
+        
         self.log_maker.writelog(self.logfile_name, f'Camera resources have been released. {self.current_camera_type} camera was used.')

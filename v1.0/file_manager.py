@@ -32,20 +32,28 @@ class FileManager:
             f.write(f"{datetime.now().replace(microsecond=0)} : {text}\n")
 
     def save_human_photo(self, frame) -> bool:
-        """Сохранение снимка при обнаружении человека"""
+        """Сохранение снимка при обнаружении человека (асинхронно)"""
         try:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
             filename = f"human_detected_{timestamp}.jpg"
             filepath = os.path.join(self.photos_folder, filename)
-            cv2.imwrite(filepath, frame)
-            self._write_tmp_log(self.logs_file, f'Human photo saved: {filename}.')
+            
+            # Run write in a separate thread to avoid blocking main loop
+            threading.Thread(target=self._write_image_task, args=(filepath, frame.copy(), filename, "Human photo")).start()
             return True
         except Exception as e:
-            self._write_tmp_log(self.logs_file, f'Error saving human photo:\n{e}')
+            self._write_tmp_log(self.logs_file, f'Error initiating save human photo:\n{e}')
             return False
 
+    def _write_image_task(self, filepath, frame, filename, log_prefix):
+        try:
+            cv2.imwrite(filepath, frame)
+            self._write_tmp_log(self.logs_file, f'{log_prefix} saved: {filename}.')
+        except Exception as e:
+            self._write_tmp_log(self.logs_file, f'Error saving {filename}:\n{e}')
+
     def save_recognized_face(self, frame, person_name) -> bool:
-        """Сохранение снимка распознанного лица"""
+        """Сохранение снимка распознанного лица (асинхронно)"""
         try:
             if not isinstance(person_name, str):
                 person_name = str(person_name)
@@ -56,9 +64,9 @@ class FileManager:
             base_name = os.path.splitext(person_name)[0]
             filename = f"{base_name}_{count}.jpg"
             filepath = os.path.join(self.faces_folder, filename)
-            cv2.imwrite(filepath, frame)
-            self._write_tmp_log(self.logs_file, f'Recognized face photo saved: {filename}.')
+            
+            threading.Thread(target=self._write_image_task, args=(filepath, frame.copy(), filename, "Recognized face photo")).start()
             return True
         except Exception as e:
-            self._write_tmp_log(self.logs_file, f'Error saving {person_name} face:\n{e}')
+            self._write_tmp_log(self.logs_file, f'Error initiating save {person_name} face:\n{e}')
             return False
